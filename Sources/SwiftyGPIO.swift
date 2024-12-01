@@ -284,10 +284,18 @@ public final class RaspberryGPIO: GPIO {
     var gpioClearPointer: UnsafeMutablePointer<UInt32>!
 
     public init(name: String, id: Int, baseAddr: Int) {
-        self.setGetId = UInt32(1<<id)
+        self.setGetId = UInt32(1<<Self.idForMemoryCalcs(id: id))
         self.BCM2708_PERI_BASE = baseAddr
         self.GPIO_BASE = BCM2708_PERI_BASE + 0x200000 /* GPIO controller */
         super.init(name:name, id:id)
+    }
+
+    static func idForMemoryCalcs(id: Int) ->  Int {
+        return id - 512
+    }
+
+    var idForMemoryCalcs: Int {
+        return id - 512
     }
 
     public override var value: Int {
@@ -369,19 +377,19 @@ public final class RaspberryGPIO: GPIO {
     }
 
     private func gpioAsInput() {
-        let ptr = gpioBasePointer.advanced(by: id/10)       // GPFSELn 0..5
+        let ptr = gpioBasePointer.advanced(by: idForMemoryCalcs/10)       // GPFSELn 0..5
         ptr.pointee &= ~(7<<((UInt32(id)%10)*3))                    // SEL=000 input
     }
 
     private func gpioAsOutput() {
-        let ptr = gpioBasePointer.advanced(by: id/10)       // GPFSELn 0..5
-        ptr.pointee &= ~(7<<((UInt32(id)%10)*3))
-        ptr.pointee |=  (1<<((UInt32(id)%10)*3))                    // SEL=001 output
+        let ptr = gpioBasePointer.advanced(by: idForMemoryCalcs/10)       // GPFSELn 0..5
+        ptr.pointee &= ~(7<<((UInt32(idForMemoryCalcs)%10)*3))
+        ptr.pointee |=  (1<<((UInt32(idForMemoryCalcs)%10)*3))                    // SEL=001 output
     }
 
     private func gpioGetDirection() -> GPIODirection {
-        let ptr = gpioBasePointer.advanced(by: id/10)       // GPFSELn 0..5
-        let d = (ptr.pointee & (7<<((UInt32(id)%10)*3)))
+        let ptr = gpioBasePointer.advanced(by: idForMemoryCalcs/10)       // GPFSELn 0..5
+        let d = (ptr.pointee & (7<<((UInt32(idForMemoryCalcs)%10)*3)))
         return (d == 0) ? .IN : .OUT
     }
 
